@@ -1,8 +1,9 @@
-project: database.o user_interface.o
-	gcc database.o user_interface.o -o project
+project2: llist.o user_interface.o
+	g++ llist.o user_interface.o -o project2
 
-database.o: database.c
-	gcc -ansi -pedantic-errors -Wall -c database.c
+llist.o: llist.cpp
+	g++ -ansi -pedantic-errors -Wall -DdebugMode -c llist.cpp
 
-user_interface.o: user_interface.c
-	gcc -ansi -pedantic-errors -Wall -c user_interface.c
+user_interface.o: user_interface.cpp
+	g++ -ansi -pedantic-errors -Wall -DdebugMode -c user_interface.cpp
+

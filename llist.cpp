@@ -2,37 +2,304 @@
 //
 //  NAME:        Travis Green
 //
-//  HOMEWORK:    Homework3b
+//  HOMEWORK:    Project2
 //
 //  CLASS:       ICS 212
 //
 //  INSTRUCTOR:  Ravi Narayan
 //
-//  DATE:        03Nov2019
+//  DATE:        11Dec2019
 //
-//  FILE:        database.c
+//  FILE:        llist.cpp
 //
 //  DESCRIPTION:
-//   This file holds the functions called in main
-//
+//   This file contains all the methods for the llist class
+//    
 ****************************************************************/
 
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <fstream>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <iostream>
 #include "record.h"
+#include "llist.h"
 
-extern int debugMode;
+using namespace std;
+
 /*****************************************************************
 //
-//  Function name: addRecord (struct record**, int, char[], char[])
+//  Function name:  readfile()
+//
+//  DESCRIPTION:   reads from a file and inputs data into a list of records
+//
+//  Parameters:    n/a                       
+//
+//  Return values:  int returnVal: -1 if file not read from, 0 if successful 
+//
+****************************************************************/
+int llist::readfile()
+    {
+        ifstream inputfile;
+        char garbagearray[80];
+        int numHolder;
+        char nameHolder[64];
+        char addressHolder[102];
+        int returnVal;
+        returnVal = 0;
+        inputfile.open(filename);
+
+        if(inputfile.is_open() == 0)
+        {
+            returnVal = -1;
+        }
+        else
+        {
+            while(inputfile.peek()!=EOF)
+            {
+                inputfile>>numHolder;
+                inputfile.getline(garbagearray,8);
+                inputfile.getline(nameHolder, 25); 
+                inputfile.getline(addressHolder, 80);
+                addRecord(numHolder, nameHolder, addressHolder);
+            }
+        }
+
+    if(returnVal != -1)
+    {
+        inputfile.close();
+    }
+
+    return returnVal;
+}
+
+
+/*****************************************************************
+//
+//  Function name:  writefile()
+//
+//  DESCRIPTION:   reads from a list of records and writes to an file
+//
+//  Parameters:    n/a                       
+//
+//  Return values:  int returnVal: -1 if file not written to, 0 if successful 
+//
+****************************************************************/
+int llist::writefile()
+{
+    ofstream inputfile;
+    struct record *copier;
+    int returnVal;
+    copier = start;
+    returnVal = 0;
+
+    inputfile.open(filename);
+    if(inputfile.is_open() == 0)
+    {
+        returnVal = -1;
+    }
+    else
+    {
+
+        while(copier != NULL)
+        {
+            inputfile << (*copier).accountno << "\n";
+            inputfile << (*copier).name << "\n";
+            inputfile << (*copier).address << "\n";
+            copier = (*copier).next;
+        }
+    }
+
+    if(returnVal != -1)
+    {
+        inputfile.close();
+    }
+
+    return returnVal;
+}
+
+
+/*****************************************************************
+//
+//  Function name:  reverse(record * start)
+//
+//  DESCRIPTION:   reverses the order of a linked list of records
+//
+//  Parameters:    n/a                       
+//
+//  Return values:  start (record *): the beginning of the linked list 
+//
+****************************************************************/
+record * llist::reverse(record *start)
+{
+    #ifdef debugMode
+    cout <<"function called is: reverse() \n";
+    #endif
+
+
+    struct record * temp = start;
+    struct record * temp2 = start;
+    struct record * temp3;
+    if(temp->next == NULL)
+    {
+        return start;
+    }
+    else
+    {
+         while(temp->next != NULL)
+         {
+             temp = temp->next;
+         }
+         while(temp2->next != temp)
+         {
+             temp2 = temp2->next;
+         }
+         temp->next = temp2;
+         temp2->next = NULL;
+         temp3 = reverse(start);
+         start = temp;         
+    }
+    return start;
+        
+}
+
+/*****************************************************************
+//
+//  Function name:  void cleanup()
+//
+//  DESCRIPTION:   frees all linked list memory in heap 
+//
+//  Parameters:    n/a                       
+//
+//  Return values:  n/a: function is void 
+//
+****************************************************************/
+void llist::cleanup()
+{
+    struct record *temp;
+    struct record *traverse;
+    traverse = start;
+
+
+    while(traverse != NULL)
+    {
+        temp = (*traverse).next;
+        delete traverse;
+        traverse = temp;
+    }
+
+    start = NULL;
+}
+
+
+
+/*****************************************************************
+//
+//  Function name:  llist()
+//
+//  DESCRIPTION:   constructor for linked list class 
+//
+//  Parameters:    n/a                       
+//
+//  Return values:  n/a
+//
+****************************************************************/
+llist::llist()
+{
+    start = NULL;
+    strcpy(filename, "accountRecords.txt");
+    readfile();
+}
+
+
+
+/*****************************************************************
+//
+//  Function name:  llist(char[] zulu)
+//
+//  DESCRIPTION:   constructor for linked list class, that lets you name the written file 
+//
+//  Parameters:    char [] zulu: a char array to hold the name of the txt file
+//
+//  Return values:  n/a
+//
+****************************************************************/
+llist::llist(char zulu[])
+{
+    start = NULL;
+    strcpy(filename, zulu);
+    readfile();
+}
+
+/*****************************************************************
+//
+//  Function name:  llist(llist&)
+//
+//  DESCRIPTION:   creates a llist using another llist (copy constructor)
+//
+//  Parameters:    llist& original : linked list to be copied
+//                 this : llist to be written to
+//
+//  Return values:  n/a 
+//
+****************************************************************/
+llist::llist(llist& original)
+{
+    *this=original;
+
+}
+
+/*****************************************************************
+//
+//  Function name:  llist& operator=(llist& first)
+//
+//  DESCRIPTION:   copies "llist" first to "llist"this
+//
+//  Parameters:    llist& first : linked list to be copied
+//                 this : llist to be written to
+//
+//  Return values:  n/a 
+//
+****************************************************************/
+llist& llist::operator=(llist& first)
+{
+    record * newStart = first.start;
+    while(newStart != NULL)
+    {
+        this->addRecord(newStart->accountno, newStart->name, newStart->address);
+        newStart = newStart->next;
+    }
+
+return *this;
+}
+
+/*****************************************************************
+//
+//  Function name:  ~llist()
+//
+//  DESCRIPTION:   destructor for linked list class 
+//
+//  Parameters:    n/a
+//
+//  Return values:  n/a
+//
+****************************************************************/
+llist::~llist()
+{
+    writefile();
+    cleanup();
+}
+
+
+
+/*****************************************************************
+//
+//  Function name: addRecord (int, char[], char[])
 //
 //  DESCRIPTION:   
-//  Intended use: will add a new record to the linked list with information from the user
+//  will add a new record to the linked list with information from the user
 //
-//  Parameters:    struct record**: a pointer to record pointer
-//                 int: account number 
+//  Parameters:    int: account number 
 //                 char [] : an array of characters (where the user's name stored)
 //                 char[]: an array of characters (where the user's address is stored)
 //
@@ -40,29 +307,27 @@ extern int debugMode;
 //                 -1 : record not added to list
 //                 
 ****************************************************************/
-
-int addRecord(struct record **start, int uaccountno, char uname[], char uaddress[])
+int llist::addRecord(int uaccountno, char uname[], char uaddress[])
 {
     struct record *temp;
     struct record *temp2;
     struct record *back;
     int returnVal;
     int size;
-    temp = *start;
-    back = *start;
+    temp = start;
+    back = start;
     returnVal = 0;
     size = 0; 
     
-    if(debugMode == 1)
-    {
-        printf("function called is: addRecord. Account number entered is %d, name entered is %s, address entered is %s \n", uaccountno, uname, uaddress);
-    }
+    #ifdef debugMode
+        cout <<"function called is: addRecord. Account number entered is " << uaccountno << "name entered is "<< uname << "address entered is " << uaddress << "\n";
+    #endif
 
 
     if(temp == NULL)
     {
-        temp2 = malloc(1 * sizeof(struct record));
-        *start = temp2;
+        temp2 = new record;
+        start = temp2;
         (*temp2).next = NULL;
     }
 
@@ -79,12 +344,12 @@ int addRecord(struct record **start, int uaccountno, char uname[], char uaddress
         }
         if(returnVal == 0)
         {
-            temp2 = malloc(1 * sizeof(struct record));
-            temp = *start;
+            temp2 = new record;
+            temp = start;
             if(uaccountno > (*temp).accountno)
             {
                 (*temp2).next = temp;
-                *start = temp2;
+                start = temp2;
             }
             else if(uaccountno < (*temp).accountno && size == 1)
             {
@@ -132,19 +397,17 @@ return returnVal;
 
 /*****************************************************************
 //
-//  Function name: printRecord (struct record*, int)
+//  Function name: printRecord (int)
 //
 //  DESCRIPTION:   will print the record of the account who's number is given by the user
 //
-//  Parameters:    struct record*: a pointer to a (struct) record
-//                 int: account number 
+//  Parameters:    int: account number 
 //
 //  Return values:  0 : record found and successfully printed
 //                  1 : record not found
 //
 ****************************************************************/
-
-int printRecord(struct record *start, int uaccountno)
+int llist::printRecord(int uaccountno)
 {
     
     struct record *scanner;
@@ -154,10 +417,9 @@ int printRecord(struct record *start, int uaccountno)
     returnVal = -1;
     endLoop = 0;
 
-    if(debugMode == 1)
-    {
+    #ifdef debugMode
         printf("function called is: printRecord. Account number entered is %d \n", uaccountno);
-    }
+    #endif
     
     if(start != NULL)
     {
@@ -165,7 +427,7 @@ int printRecord(struct record *start, int uaccountno)
         {
             if((*scanner).accountno == uaccountno)
             {
-                printf("%d\n%s\n%s\n", (*scanner).accountno, (*scanner).name, (*scanner).address);
+                cout << (*scanner).accountno << "\n" << (*scanner).name << "\n" << (*scanner).address << "\n";
                 endLoop = 1;
                 returnVal = 0;
             }
@@ -177,11 +439,11 @@ int printRecord(struct record *start, int uaccountno)
     }
     if ((returnVal == -1) && (start != NULL))
     {
-        printf("Record with that account number does not exist in the database \n");
+        cout << "Record with that account number does not exist in the database \n";
     }
     else if((returnVal == -1) && (start == NULL))
     {
-        printf("No records exist in the database \n");
+        cout << "No records exist in the database \n";
     }
 
     return returnVal;
@@ -190,62 +452,19 @@ int printRecord(struct record *start, int uaccountno)
 
 /*****************************************************************
 //
-//  Function name: printAllRecords (struct record*)
-//
-//  DESCRIPTION: Will print out all records in the list or notify
-//  the user that the list of records is empty
-//
-//  Parameters:    struct record *start: a pointer to struct record
-//
-//  Return values:   n/a
-//
-****************************************************************/
-
-void printAllRecords(struct record *start)
-{
-    
-    struct record *iterator;
-    iterator = start;
-
-    if(debugMode == 1)
-    {
-        printf("function called is: printAllRecords. This will print all records \n");
-    }
-
-    if(iterator == NULL)
-    {
-        printf("The list of records is empty \n");
-    }
-
-    else
-    {
-        while(iterator != NULL)
-        {
-            printf("%d\n%s\n%s\n", (*iterator).accountno, (*iterator).name, (*iterator).address);
-            iterator = (*iterator).next;
-        }
-    }
-
-}
-
-/*****************************************************************
-//
-//  Function name: modifyRecord (struct record*, int, char[])
+//  Function name: modifyRecord(int, char[])
 //
 //  DESCRIPTION:   
-//  Intended use: will change the address of the account who's # is given by the user
+//  will change the address of the account who's # is given by the user
 //
-//  Parameters:    struct record*: a pointer to a struct of type record
-//                 int: account number 
+//  Parameters:    int: account number 
 //                 Char[]: an array of characters (where the user's address is stored)
 //
 //  Return values:  0 : function finish running
 //                 -1 : no records were modified 
 //                 
 ****************************************************************/
-
-
-int modifyRecord(struct record *start, int uaccountno, char uaddress[])
+int llist::modifyRecord(int uaccountno, char uaddress[])
 {
     struct record *scanner;
     int returnVal;
@@ -254,10 +473,9 @@ int modifyRecord(struct record *start, int uaccountno, char uaddress[])
     returnVal = -1;
     endLoop = 0;
 
-    if(debugMode == 1)
-    {
-    printf("function called is: modifyRecord. Account number entered is %d, addres entered is %s \n", uaccountno, uaddress);
-    }
+    #ifdef debugMode
+    cout << "function called is: modifyRecord. Account number entered is " << uaccountno << "addres entered is " << uaddress << "\n";
+    #endif
 
     if(start != NULL)
     {
@@ -278,11 +496,11 @@ int modifyRecord(struct record *start, int uaccountno, char uaddress[])
 
     if((returnVal == -1) && (start != NULL))
     {
-        printf("Record with that account number does not exist in the database \n");
+        cout << "Record with that account number does not exist in the database \n";
     }
     else if((returnVal == -1) && (start == NULL))
     {
-        printf("No records exist in the database \n");
+        cout << "No records exist in the database \n";
     }
 
     return returnVal;
@@ -290,45 +508,41 @@ int modifyRecord(struct record *start, int uaccountno, char uaddress[])
 
 /*****************************************************************
 //
-//  Function name: deleteRecord (struct record**, int)
+//  Function name: deleteRecord (int)
 //
 //  DESCRIPTION:   will delete the record who's account # is given by the user
 //
-//  Parameters:    struct record**: a pointer to a pointer to struct of type record
-//                 int: account number 
+//  Parameters:    int: account number 
 //
 //  Return values:  0 : record successfully deleted
 //                  1 : no record was deleted
 //                 
 ****************************************************************/
-
-
-int deleteRecord(struct record **start, int uaccountno)
+int llist::deleteRecord(int uaccountno)
 {
     struct record *scanner;
     struct record *reLink;
     int returnVal;
-    scanner = *start;
-    reLink = *start;
+    scanner = start;
+    reLink = start;
     returnVal = 1;
 
-    if(debugMode == 1)
-    {
-        printf("function called is: deleteRecord. Account number entered is %d \n", uaccountno);
-    }
+    #ifdef debugMode
+        cout << "function called is: deleteRecord. Account number entered is " << uaccountno << "\n";
+    #endif
 
     if(scanner != NULL)
     {
         if((*scanner).next == NULL && (*scanner).accountno == uaccountno)
         {
-            *start = NULL;
+            start = NULL;
             returnVal = 0;
         }
         else if((*scanner).next != NULL)
         {
             if((*scanner).accountno == uaccountno)
             {
-                *start = (*scanner).next;
+                start = (*scanner).next;
                 returnVal = 0;
             }
             else
@@ -356,157 +570,57 @@ int deleteRecord(struct record **start, int uaccountno)
     }
     if(returnVal == 0)
     {
-        free(scanner);
+        delete scanner;
     }
 
     return returnVal;
 }
 
-/*****************************************************************
-//
-//  Function name: int readfile()
-//
-//  DESCRIPTION:  This function reads from a textfile and writes the contents
-//   of the text file into a list of struct records
-//
-//  Parameters: struct record **start: pointer to struct record pointer holding address of first record
-//              filename(char[]): holds the name of the file to be read from
-//
-//  Return values:  0 : success
-//                 -1 : the text file is invalid, therefore no records were written into
-//
-****************************************************************/
-
-int readfile(struct record **start, char filename[])
+void llist::reverse()
 {
-    FILE *inputfile;
-    char garbagearray[80];
-    int numHolder;
-    char nameHolder[64];
-    char addressHolder[102];
-    int returnVal;
-    int looper;
-    looper = 0;
-    returnVal = 0;
-    inputfile = fopen(filename,"r");
-
-    if(inputfile == NULL)
-    {
-        returnVal = -1;
-    }
-    else
-    {
-        while(feof(inputfile) != 1)
-        {
-                fscanf(inputfile, "%d", &numHolder);
-                fgets(garbagearray, 20, inputfile); 
-                fgets(nameHolder, 25, inputfile);
-                looper = 0;
-                while(looper < 25)
-                {
-                    if(nameHolder[looper] == '\n')
-                    {
-                        nameHolder[looper] = '\0';
-                    }
-                    looper += 1;
-                }
-                looper = 0;
-                fgets(addressHolder, 80, inputfile);
-                while(looper < 80)
-                {
-                    if(addressHolder[looper] == '\n')
-                    {
-                        addressHolder[looper] = '\0';
-                    }
-                    looper += 1;
-                }
-                looper = 0;
-                addRecord(start, numHolder, nameHolder, addressHolder);
-         }
-    }
-
-    if(returnVal != -1)
-    {
-        fclose(inputfile);
-    }
-
-    return returnVal;
+    start = reverse(start);
 }
 
+
+
 /*****************************************************************
 //
-//  Function name: int writefile()
+//  Function name:  void operator<<(ostream&, llist&)
 //
-//  DESCRIPTION:  This function reads from a list of records and 
-//   writes the contents of the records into a text file
+//  DESCRIPTION:   prints out all records in the database
 //
-//  Parameters:  struct record *start: a record pointer that holds the value of the first record
-//               filename(char[]): holds the name of the file to be written into
+//  Parameters:    ostream: output stream
+//                  llist : linked list of records
 //
-//  Return values:  0 : success
-//                 -1 : the text file is invalid, therefore no records were written to the file
+//  Return values:  n/a: function is void
 //
 ****************************************************************/
-
-int writefile(struct record *start, char filename[])
+void operator<<(std::ostream& os, llist& j)
 {
-    FILE *inputfile;
-    struct record *copier;
-    int returnVal;
-    copier = start;
-    returnVal = 0;
+    struct record *iterator;
+    iterator = j.start;
 
-    inputfile = fopen(filename,"w");
-    if(inputfile == NULL)
+    #ifdef debugMode
+        cout<<"function called is: printAllRecords. This will print all records \n";
+    #endif
+
+    if(iterator == NULL)
     {
-        returnVal = -1;
+        cout << "The list of records is empty \n";
     }
+
     else
     {
-
-        while(copier != NULL)
+        while(iterator != NULL)
         {
-            fprintf(inputfile, "%d\n", (*copier).accountno);
-            fprintf(inputfile, "%s\n", (*copier).name);
-            fprintf(inputfile, "%s\n", (*copier).address);
-            copier = (*copier).next;
+            cout << (*iterator).accountno << "\n" << (*iterator).name << "\n" << (*iterator).address << "\n";
+            iterator = (*iterator).next;
         }
     }
 
-    if(returnVal != -1)
-    {
-        fclose(inputfile);
-    }
 
-    return returnVal;
 }
 
-/*****************************************************************
-//
-//  Function name: void cleanup()
-//
-//  DESCRIPTION:  This function releases all allocated spaces in the heap memory
-//  and assigns the value of NULL to start
-//
-//  Parameters: &start : pointer to a struct record pointer
-//
-//  Return values: n/a
-//
-****************************************************************/
- 
-void cleanup(struct record **start)
-{
-    struct record *temp;
-    struct record *traverse;
-    traverse = *start;
 
 
-    while(traverse != NULL)
-    {
-        temp = (*traverse).next;
-        free(traverse);
-        traverse = temp;
-    }
 
-    *start = NULL;
-}
